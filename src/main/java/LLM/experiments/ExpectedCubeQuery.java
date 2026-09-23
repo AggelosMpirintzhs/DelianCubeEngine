@@ -9,6 +9,7 @@ public class ExpectedCubeQuery {
     private final String cubeName;
     private final String aggregateFunction;
     private final String measure;
+
     private final List<String> gammaFields;
     private final List<String> sigmaConditions;
 
@@ -19,11 +20,35 @@ public class ExpectedCubeQuery {
             List<String> gammaFields,
             List<String> sigmaConditions
     ) {
-        this.cubeName = safeString(cubeName);
-        this.aggregateFunction = safeString(aggregateFunction);
-        this.measure = safeString(measure);
-        this.gammaFields = copyList(gammaFields);
-        this.sigmaConditions = copyList(sigmaConditions);
+        validateRequiredField(
+                "cubeName",
+                cubeName
+        );
+
+        validateRequiredField(
+                "aggregateFunction",
+                aggregateFunction
+        );
+
+        validateRequiredField(
+                "measure",
+                measure
+        );
+
+        this.cubeName =
+                safeString(cubeName);
+
+        this.aggregateFunction =
+                safeString(aggregateFunction);
+
+        this.measure =
+                safeString(measure);
+
+        this.gammaFields =
+                copyList(gammaFields);
+
+        this.sigmaConditions =
+                copyList(sigmaConditions);
     }
 
     public String getCubeName() {
@@ -39,14 +64,46 @@ public class ExpectedCubeQuery {
     }
 
     public List<String> getGammaFields() {
-        return Collections.unmodifiableList(gammaFields);
+        return Collections.unmodifiableList(
+                gammaFields
+        );
     }
 
     public List<String> getSigmaConditions() {
-        return Collections.unmodifiableList(sigmaConditions);
+        return Collections.unmodifiableList(
+                sigmaConditions
+        );
     }
 
-    private static String safeString(String value) {
+    /*
+     * ==========================================================
+     * VALIDATION
+     * ==========================================================
+     */
+
+    private static void validateRequiredField(
+            String fieldName,
+            String value
+    ) {
+        if (value == null
+                || value.trim().isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    fieldName
+                            + " cannot be null or empty."
+            );
+        }
+    }
+
+    /*
+     * ==========================================================
+     * HELPERS
+     * ==========================================================
+     */
+
+    private static String safeString(
+            String value
+    ) {
         if (value == null) {
             return "";
         }
@@ -54,22 +111,29 @@ public class ExpectedCubeQuery {
         return value.trim();
     }
 
-    private static List<String> copyList(List<String> values) {
-        List<String> copiedValues = new ArrayList<String>();
+    private static List<String> copyList(
+            List<String> values
+    ) {
+        List<String> copiedValues =
+                new ArrayList<String>();
 
         if (values == null) {
             return copiedValues;
         }
 
         for (String value : values) {
+
             if (value == null) {
                 continue;
             }
 
-            String trimmedValue = value.trim();
+            String trimmedValue =
+                    value.trim();
 
             if (!trimmedValue.isEmpty()) {
-                copiedValues.add(trimmedValue);
+                copiedValues.add(
+                        trimmedValue
+                );
             }
         }
 
@@ -78,12 +142,27 @@ public class ExpectedCubeQuery {
 
     @Override
     public String toString() {
+
         return "ExpectedCubeQuery{" +
-                "cubeName='" + cubeName + '\'' +
-                ", aggregateFunction='" + aggregateFunction + '\'' +
-                ", measure='" + measure + '\'' +
-                ", gammaFields=" + gammaFields +
-                ", sigmaConditions=" + sigmaConditions +
+
+                "cubeName='"
+                + cubeName
+                + '\'' +
+
+                ", aggregateFunction='"
+                + aggregateFunction
+                + '\'' +
+
+                ", measure='"
+                + measure
+                + '\'' +
+
+                ", gammaFields="
+                + gammaFields +
+
+                ", sigmaConditions="
+                + sigmaConditions +
+
                 '}';
     }
 }

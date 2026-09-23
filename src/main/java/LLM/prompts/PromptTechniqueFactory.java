@@ -6,32 +6,36 @@ import java.util.List;
 
 public class PromptTechniqueFactory {
 
-    public static final String RULES_TEMPLATE = "rules_template";
-    public static final String RULES_GENERIC_EXAMPLES = "rules_generic_examples";
-    public static final String STEP_BY_STEP_METHODOLOGY = "step_by_step_methodology";
-    public static final String HYBRID_SELF_CHECK = "hybrid_self_check";
+    public static final String INSTRUCTIONS_FOR_QUERY_GENERATION =
+            "instructions_for_query_generation";
+
+    public static final String PRESCRIPTION_OF_RESULT =
+            "prescription_of_result";
+
+    public static final String EXAMPLES =
+            "examples";
 
     private PromptTechniqueFactory() {
         // Utility class
     }
 
+    /*
+     * Creates one prompt technique based on its name.
+     */
     public static PromptTechnique createByName(String promptTechniqueName) {
+
         String normalizedName = normalizeName(promptTechniqueName);
 
-        if (RULES_TEMPLATE.equals(normalizedName)) {
-            return new RulesTemplatePromptTechnique();
+        if (INSTRUCTIONS_FOR_QUERY_GENERATION.equals(normalizedName)) {
+            return new InstructionsForQueryGenerationPromptTechnique();
         }
 
-        if (RULES_GENERIC_EXAMPLES.equals(normalizedName)) {
-            return new RulesGenericExamplesPromptTechnique();
+        if (PRESCRIPTION_OF_RESULT.equals(normalizedName)) {
+            return new PrescriptionOfResultPromptTechnique();
         }
 
-        if (STEP_BY_STEP_METHODOLOGY.equals(normalizedName)) {
-            return new StepByStepMethodologyPromptTechnique();
-        }
-
-        if (HYBRID_SELF_CHECK.equals(normalizedName)) {
-            return new HybridSelfCheckPromptTechnique();
+        if (EXAMPLES.equals(normalizedName)) {
+            return new ExamplesPromptTechnique();
         }
 
         throw new IllegalArgumentException(
@@ -39,29 +43,48 @@ public class PromptTechniqueFactory {
         );
     }
 
+    /*
+     * Returns all currently available experimental techniques.
+     *
+     * These are individual techniques, not combinations.
+     */
     public static List<PromptTechnique> getAllPromptTechniques() {
-        List<PromptTechnique> techniques = new ArrayList<PromptTechnique>();
 
-        techniques.add(new RulesTemplatePromptTechnique());
-        techniques.add(new RulesGenericExamplesPromptTechnique());
-        techniques.add(new StepByStepMethodologyPromptTechnique());
-        techniques.add(new HybridSelfCheckPromptTechnique());
+        List<PromptTechnique> techniques =
+                new ArrayList<PromptTechnique>();
+
+        techniques.add(
+                new InstructionsForQueryGenerationPromptTechnique()
+        );
+
+        techniques.add(
+                new PrescriptionOfResultPromptTechnique()
+        );
+
+        techniques.add(
+                new ExamplesPromptTechnique()
+        );
 
         return Collections.unmodifiableList(techniques);
     }
 
+    /*
+     * Returns the names of all available techniques.
+     */
     public static List<String> getAllPromptTechniqueNames() {
-        List<String> names = new ArrayList<String>();
 
-        names.add(RULES_TEMPLATE);
-        names.add(RULES_GENERIC_EXAMPLES);
-        names.add(STEP_BY_STEP_METHODOLOGY);
-        names.add(HYBRID_SELF_CHECK);
+        List<String> names =
+                new ArrayList<String>();
+
+        names.add(INSTRUCTIONS_FOR_QUERY_GENERATION);
+        names.add(PRESCRIPTION_OF_RESULT);
+        names.add(EXAMPLES);
 
         return Collections.unmodifiableList(names);
     }
 
     private static String normalizeName(String name) {
+
         if (name == null) {
             return "";
         }

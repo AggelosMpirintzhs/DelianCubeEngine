@@ -17,20 +17,46 @@ public class PromptSizeStats {
     ) {
         this.characterCount = Math.max(0, characterCount);
         this.utf8ByteCount = Math.max(0, utf8ByteCount);
-        this.estimatedTokensByCharacters = Math.max(0L, estimatedTokensByCharacters);
-        this.estimatedTokensByBytes = Math.max(0L, estimatedTokensByBytes);
+        this.estimatedTokensByCharacters =
+                Math.max(0L, estimatedTokensByCharacters);
+
+        this.estimatedTokensByBytes =
+                Math.max(0L, estimatedTokensByBytes);
     }
 
-    public static PromptSizeStats fromPrompt(String prompt) {
+    public static PromptSizeStats fromPrompt(
+            String prompt
+    ) {
         if (prompt == null) {
             prompt = "";
         }
 
-        int characterCount = prompt.length();
-        int utf8ByteCount = prompt.getBytes(StandardCharsets.UTF_8).length;
+        int characterCount =
+                prompt.length();
 
-        long estimatedTokensByCharacters = (long) Math.ceil(characterCount / 4.0);
-        long estimatedTokensByBytes = (long) Math.ceil(utf8ByteCount / 4.0);
+        int utf8ByteCount =
+                prompt
+                        .getBytes(StandardCharsets.UTF_8)
+                        .length;
+
+        /*
+         * Rough token estimates.
+         *
+         * These are useful before the LLM request,
+         * but they are NOT the authoritative token count.
+         *
+         * The real token count is obtained later from
+         * Ollama's prompt_eval_count.
+         */
+        long estimatedTokensByCharacters =
+                (long) Math.ceil(
+                        characterCount / 4.0
+                );
+
+        long estimatedTokensByBytes =
+                (long) Math.ceil(
+                        utf8ByteCount / 4.0
+                );
 
         return new PromptSizeStats(
                 characterCount,
@@ -61,8 +87,10 @@ public class PromptSizeStats {
         return "PromptSizeStats{" +
                 "characterCount=" + characterCount +
                 ", utf8ByteCount=" + utf8ByteCount +
-                ", estimatedTokensByCharacters=" + estimatedTokensByCharacters +
-                ", estimatedTokensByBytes=" + estimatedTokensByBytes +
+                ", estimatedTokensByCharacters="
+                + estimatedTokensByCharacters +
+                ", estimatedTokensByBytes="
+                + estimatedTokensByBytes +
                 '}';
     }
 }

@@ -14,87 +14,162 @@ import LLM.schema.MeasureSchema;
 public class CubeSchemaPromptFormatterCompact {
 
     public String format(CubeSchema cubeSchema) {
+
+        if (cubeSchema == null) {
+            throw new IllegalArgumentException(
+                    "CubeSchema cannot be null."
+            );
+        }
+
         StringBuilder prompt = new StringBuilder();
 
-        prompt.append("Cube:\n");
-        prompt.append(safe(cubeSchema.getCubeName())).append("\n\n");
-
-        prompt.append("Measures:\n");
+        appendCube(prompt, cubeSchema);
         appendMeasures(prompt, cubeSchema);
-        prompt.append("\n\n");
-
-        prompt.append("Dimensions:\n\n");
         appendDimensions(prompt, cubeSchema);
 
         return prompt.toString();
     }
 
-    private void appendMeasures(StringBuilder prompt, CubeSchema cubeSchema) {
+    private void appendCube(
+            StringBuilder prompt,
+            CubeSchema cubeSchema) {
+
+        prompt.append("Cube:\n");
+        prompt.append(safe(cubeSchema.getCubeName()));
+        prompt.append("\n\n");
+    }
+
+    private void appendMeasures(
+            StringBuilder prompt,
+            CubeSchema cubeSchema) {
+
+        prompt.append("Measures:\n");
+
         List<MeasureSchema> measures = cubeSchema.getMeasures();
 
-        for (int i = 0; i < measures.size(); i++) {
-            MeasureSchema measure = measures.get(i);
+        if (measures != null) {
 
-            prompt.append(safe(measure.getName()));
+            for (MeasureSchema measure : measures) {
 
-            if (i < measures.size() - 1) {
-                prompt.append(", ");
+                if (measure == null) {
+                    continue;
+                }
+
+                String measureName = safe(measure.getName());
+
+                if (measureName.isEmpty()) {
+                    continue;
+                }
+
+                prompt.append("- ");
+                prompt.append(measureName);
+                prompt.append("\n");
             }
         }
+
+        prompt.append("\n");
     }
 
-    private void appendDimensions(StringBuilder prompt, CubeSchema cubeSchema) {
-        List<DimensionSchema> dimensions = cubeSchema.getDimensions();
+    private void appendDimensions(
+            StringBuilder prompt,
+            CubeSchema cubeSchema) {
 
-        for (DimensionSchema dimension : dimensions) {
-            appendDimension(prompt, dimension);
-            prompt.append("\n");
-        }
-    }
+        prompt.append("Dimensions:\n\n");
 
-    private void appendDimension(StringBuilder prompt, DimensionSchema dimension) {
-        String dimensionName = safe(dimension.getName());
+        List<DimensionSchema> dimensions =
+                cubeSchema.getDimensions();
 
-        prompt.append(dimensionName).append("\n");
-
-        if (!isEmpty(dimension.getDataSource())) {
-            prompt.append("datasource: ").append(safe(dimension.getDataSource())).append("\n");
-        }
-
-        if (!isEmpty(dimension.getDimensionType())) {
-            prompt.append("type: ").append(safe(dimension.getDimensionType())).append("\n");
-        }
-
-        String hierarchyText = buildCompactHierarchy(dimension);
-
-        if (!hierarchyText.isEmpty()) {
-            prompt.append("hierarchy: ").append(hierarchyText).append("\n");
-        }
-
-        for (LevelSchema level : dimension.getLevels()) {
-            if (shouldSkipLevel(level)) {
-                continue;
-            }
-
-            appendLevel(prompt, dimensionName, level);
-        }
-    }
-
-    private void appendLevel(StringBuilder prompt, String dimensionName, LevelSchema level) {
-        List<String> allowedFields = collectAllowedFieldsForLevel(dimensionName, level);
-
-        if (allowedFields.isEmpty()) {
+        if (dimensions == null) {
             return;
         }
 
-        prompt.append("level ");
-        prompt.append(safe(level.getLevelName()));
-        prompt.append(": ");
+        for (DimensionSchema dimension : dimensions) {
 
-        for (int i = 0; i < allowedFields.size(); i++) {
-            prompt.append(allowedFields.get(i));
+            if (dimension == null) {
+                continue;
+            }
 
-            if (i < allowedFields.size() - 1) {
+            appendDimension(prompt, dimension);
+        }
+    }
+
+    private void appendDimension(
+            StringBuilder prompt,
+            DimensionSchema dimension) {
+
+        String dimensionName = safe(dimension.getName());
+
+        if (dimensionName.isEmpty()) {
+            return;
+        }
+
+        prompt.append(dimensionName);
+        prompt.append("\n");
+
+        String hierarchy =
+                buildCompactHierarchy(dimension);
+
+        if (!hierarchy.isEmpty()) {
+            prompt.append("hierarchy: ");
+            prompt.append(hierarchy);
+            prompt.append("\n");
+        }
+
+        prompt.append("levels:\n");
+
+        List<LevelSchema> levels =
+                dimension.getLevels();
+
+        if (levels != null) {
+
+            for (LevelSchema level : levels) {
+
+                if (shouldSkipLevel(level)) {
+                    continue;
+                }
+
+                appendLevel(
+                        prompt,
+                        dimensionName,
+                        level
+                );
+            }
+        }
+
+        prompt.append("\n");
+    }
+
+    private void appendLevel(
+            StringBuilder prompt,
+            String dimensionName,
+            LevelSchema level) {
+
+        String levelName =
+                safe(level.getLevelName());
+
+        if (levelName.isEmpty()) {
+            return;
+        }
+
+        List<String> fields =
+                collectFieldsForLevel(
+                        dimensionName,
+                        level
+                );
+
+        if (fields.isEmpty()) {
+            return;
+        }
+
+        prompt.append("- ");
+        prompt.append(levelName);
+        prompt.append(" -> ");
+
+        for (int i = 0; i < fields.size(); i++) {
+
+            prompt.append(fields.get(i));
+
+            if (i < fields.size() - 1) {
                 prompt.append(", ");
             }
         }
@@ -102,42 +177,71 @@ public class CubeSchemaPromptFormatterCompact {
         prompt.append("\n");
     }
 
-    private List<String> collectAllowedFieldsForLevel(String dimensionName, LevelSchema level) {
-        Set<String> fields = new LinkedHashSet<String>();
+    private List<String> collectFieldsForLevel(
+            String dimensionName,
+            LevelSchema level) {
 
-        for (LevelAttributeSchema attribute : level.getAttributes()) {
+        Set<String> fields =
+                new LinkedHashSet<String>();
+
+        List<LevelAttributeSchema> attributes =
+                level.getAttributes();
+
+        if (attributes == null) {
+            return new ArrayList<String>(fields);
+        }
+
+        for (LevelAttributeSchema attribute : attributes) {
+
             if (attribute == null) {
                 continue;
             }
 
-            String attributeName = safe(attribute.getName());
+            String attributeName =
+                    safe(attribute.getName());
 
-            if (shouldSkipAttribute(attributeName)) {
+            if (attributeName.isEmpty()) {
                 continue;
             }
 
-            fields.add(dimensionName + "." + attributeName);
+            fields.add(
+                    dimensionName
+                            + "."
+                            + attributeName
+            );
         }
 
         return new ArrayList<String>(fields);
     }
 
-    private String buildCompactHierarchy(DimensionSchema dimension) {
-        List<String> hierarchy = dimension.getHierarchy();
+    private String buildCompactHierarchy(
+            DimensionSchema dimension) {
 
-        if (hierarchy == null || hierarchy.isEmpty()) {
+        List<String> hierarchy =
+                dimension.getHierarchy();
+
+        if (hierarchy == null ||
+                hierarchy.isEmpty()) {
+
             return "";
         }
 
-        StringBuilder builder = new StringBuilder();
+        StringBuilder builder =
+                new StringBuilder();
 
         boolean first = true;
 
         for (String levelName : hierarchy) {
+
             if (isEmpty(levelName)) {
                 continue;
             }
 
+            /*
+             * "All" levels are normally implementation-level
+             * hierarchy nodes and are not useful for query
+             * generation.
+             */
             if (isAllLevelName(levelName)) {
                 continue;
             }
@@ -147,83 +251,39 @@ public class CubeSchemaPromptFormatterCompact {
             }
 
             builder.append(levelName.trim());
+
             first = false;
         }
 
         return builder.toString();
     }
 
-    private boolean shouldSkipLevel(LevelSchema level) {
+    private boolean shouldSkipLevel(
+            LevelSchema level) {
+
         if (level == null) {
             return true;
         }
 
-        String levelName = safe(level.getLevelName());
+        String levelName =
+                safe(level.getLevelName());
+
+        if (levelName.isEmpty()) {
+            return true;
+        }
 
         return isAllLevelName(levelName);
     }
 
-    private boolean shouldSkipAttribute(String attributeName) {
-        if (attributeName == null) {
-            return true;
-        }
+    private boolean isAllLevelName(
+            String levelName) {
 
-        String normalized = attributeName.trim().toLowerCase();
-
-        if (normalized.isEmpty()) {
-            return true;
-        }
-
-        /*
-         * Κρατάμε το schema μικρό.
-         * Αφαιρούμε κυρίως τεχνικά ή επικοινωνιακά πεδία
-         * που σπάνια χρειάζονται σε gamma/sigma.
-         *
-         * Δεν αφαιρούμε semantic fields όπως:
-         * category, family, type, city, state, country, year, month,
-         * quarter, gender, income, media, status, low_fat κλπ.
-         */
-        if ("all".equals(normalized)) {
-            return true;
-        }
-
-        if ("id".equals(normalized)) {
-            return true;
-        }
-
-        if (normalized.endsWith("_id")) {
-            return true;
-        }
-
-        if (normalized.contains("phone")) {
-            return true;
-        }
-
-        if (normalized.contains("fax")) {
-            return true;
-        }
-
-        if (normalized.contains("address")) {
-            return true;
-        }
-
-        if (normalized.contains("postal")) {
-            return true;
-        }
-
-        if (normalized.contains("account")) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean isAllLevelName(String levelName) {
         if (levelName == null) {
             return false;
         }
 
-        String normalized = levelName.trim().toLowerCase();
+        String normalized =
+                levelName.trim().toLowerCase();
 
         return normalized.equals("all")
                 || normalized.startsWith("all_")
@@ -231,10 +291,12 @@ public class CubeSchemaPromptFormatterCompact {
     }
 
     private boolean isEmpty(String value) {
-        return value == null || value.trim().isEmpty();
+        return value == null
+                || value.trim().isEmpty();
     }
 
     private String safe(String value) {
+
         if (value == null) {
             return "";
         }

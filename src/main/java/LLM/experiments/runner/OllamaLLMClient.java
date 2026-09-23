@@ -185,57 +185,153 @@ public class OllamaLLMClient {
         );
     }
 
-    private String buildJsonPayload(LLMModelConfig modelConfig, String prompt) {
-        StringBuilder json = new StringBuilder();
+    private String buildJsonPayload(
+            LLMModelConfig modelConfig,
+            String prompt
+    ) {
+
+        StringBuilder json =
+                new StringBuilder();
 
         json.append("{");
 
+        /*
+         * Model
+         */
         json.append("\"model\":\"")
-                .append(escapeJson(modelConfig.getModelName()))
+                .append(
+                        escapeJson(
+                                modelConfig.getModelName()
+                        )
+                )
                 .append("\",");
 
+        /*
+         * Prompt
+         */
         json.append("\"prompt\":\"")
-                .append(escapeJson(prompt))
+                .append(
+                        escapeJson(
+                                prompt
+                        )
+                )
                 .append("\",");
 
+        /*
+         * Streaming
+         */
         json.append("\"stream\":")
-                .append(modelConfig.isStreamEnabled())
+                .append(
+                        modelConfig.isStreamEnabled()
+                )
                 .append(",");
 
-        if (modelConfig.getModelName().startsWith("qwen3")) {
-            json.append("\"think\":false,");
+        /*
+         * Qwen reasoning.
+         *
+         * Disable thinking so that the experiment evaluates
+         * the direct query generation task.
+         */
+        if (modelConfig
+                .getModelName()
+                .startsWith("qwen3") || modelConfig
+                .getModelName()
+                .startsWith("gemma4:26b")) {
+
+            json.append(
+                    "\"think\":false,"
+            );
         }
 
-        if (modelConfig.getModelName().startsWith("gpt-oss")) {
-            json.append("\"think\":\"low\",");
+        /*
+         * GPT-OSS reasoning.
+         *
+         * Keep reasoning effort fixed across all runs.
+         */
+        if (modelConfig
+                .getModelName()
+                .startsWith("gpt-oss")) {
+
+            json.append(
+                    "\"think\":\"low\","
+            );
         }
 
-        if (modelConfig.getKeepAlive() != null && !modelConfig.getKeepAlive().trim().isEmpty()) {
+        /*
+         * Keep model loaded between experiment requests.
+         */
+        if (modelConfig.getKeepAlive() != null
+                && !modelConfig
+                .getKeepAlive()
+                .trim()
+                .isEmpty()) {
+
             json.append("\"keep_alive\":\"")
-                    .append(escapeJson(modelConfig.getKeepAlive()))
+                    .append(
+                            escapeJson(
+                                    modelConfig.getKeepAlive()
+                            )
+                    )
                     .append("\",");
         }
 
+        /*
+         * ==========================================================
+         * GENERATION OPTIONS
+         * ==========================================================
+         */
+
         json.append("\"options\":{");
 
+        /*
+         * Context size.
+         */
         json.append("\"num_ctx\":")
-                .append(modelConfig.getNumCtx())
+                .append(
+                        modelConfig.getNumCtx()
+                )
                 .append(",");
 
+        /*
+         * Maximum generated tokens.
+         */
         json.append("\"num_predict\":")
-                .append(modelConfig.getNumPredict())
+                .append(
+                        modelConfig.getNumPredict()
+                )
                 .append(",");
 
+        /*
+         * Deterministic generation.
+         */
         json.append("\"temperature\":")
-                .append(modelConfig.getTemperature())
+                .append(
+                        modelConfig.getTemperature()
+                )
                 .append(",");
 
+        /*
+         * Fixed random seed.
+         */
+        json.append("\"seed\":")
+                .append(
+                        modelConfig.getSeed()
+                )
+                .append(",");
+
+        /*
+         * Sampling parameters.
+         */
         json.append("\"top_k\":")
-                .append(modelConfig.getTopK())
+                .append(
+                        modelConfig.getTopK()
+                )
                 .append(",");
 
         json.append("\"top_p\":")
-                .append(modelConfig.getTopP());
+                .append(
+                        modelConfig.getTopP()
+                );
 
         json.append("}");
 
